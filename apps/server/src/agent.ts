@@ -135,6 +135,7 @@ const ALLOWED_TOOLS = [
   "Glob",
   "Grep",
   "Bash",
+  "PowerShell",
   "TodoWrite",
   "Skill",
 ];

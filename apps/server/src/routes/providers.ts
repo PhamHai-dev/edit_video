@@ -196,7 +196,7 @@ async function fetchLiveClaudeModels(): Promise<{
   source: "anthropic" | "claude-code" | "static";
   models: Array<{ id: string; label: string }>;
 }> {
-  const key = process.env.ANTHROPIC_API_KEY;
+  const key = process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN;
   if (!key) {
     const viaSdk = await fetchSdkClaudeModels();
     return viaSdk ? { source: "claude-code", models: viaSdk } : { source: "static", models: CLAUDE_MODELS };
@@ -205,15 +205,20 @@ async function fetchLiveClaudeModels(): Promise<{
     return { source: "anthropic", models: liveClaudeModelsCache.list };
   }
   try {
+    const base = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/+$/, "");
     const list: Array<{ id: string; label: string }> = [];
     let afterId: string | null = null;
     // API trả mới → cũ; lặp phân trang, chặn tối đa 10 trang để an toàn
     for (let page = 0; page < 10; page++) {
-      const url = new URL("https://api.anthropic.com/v1/models");
+      const url = new URL(`${base}/v1/models`);
       url.searchParams.set("limit", "100");
       if (afterId) url.searchParams.set("after_id", afterId);
       const r = await fetch(url, {
-        headers: { "x-api-key": key, "anthropic-version": "2023-06-01" },
+        headers: {
+          "x-api-key": key,
+          Authorization: `Bearer ${key}`,
+          "anthropic-version": "2023-06-01",
+        },
       });
       if (!r.ok) return { source: "static", models: CLAUDE_MODELS };
       const data = (await r.json()) as {

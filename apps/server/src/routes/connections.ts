@@ -310,10 +310,15 @@ router.post("/:provider/test", async (req, res) => {
   }
 
   if (provider === "claude") {
-    const key = process.env.ANTHROPIC_API_KEY;
+    const key = process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN;
     if (key) {
-      const r = await fetch("https://api.anthropic.com/v1/models?limit=1", {
-        headers: { "x-api-key": key, "anthropic-version": "2023-06-01" },
+      const base = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/+$/, "");
+      const r = await fetch(`${base}/v1/models?limit=1`, {
+        headers: {
+          "x-api-key": key,
+          Authorization: `Bearer ${key}`,
+          "anthropic-version": "2023-06-01",
+        },
       });
       if (r.ok) {
         res.json({ ok: true, message: "API key Anthropic hoạt động." });
